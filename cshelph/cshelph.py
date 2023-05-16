@@ -131,23 +131,27 @@ def bin_data(dataset, lat_res, height_res):
     # Calculate number of bins required both vertically and horizontally with resolution size
     lat_bin_number = round(abs(dataset['latitude'].min() - dataset['latitude'].max())/lat_res)
     height_bin_number = round(abs(dataset['photon_height'].min() - dataset['photon_height'].max())/height_res)
+#when the difference between the photon height is too small the height bin numbr will be rounded to zero. This will result in an error ValueError: `bins` should be a positive integer.
+#Option 1. Set the output dataset to an empty list and return it.
+    if height_bin_number==0: 
+        dataset1=[]
+    else:
+         # Duplicate dataframe
+        dataset1 = dataset
     
-     # Duplicate dataframe
-    dataset1 = dataset
+        # Cut lat bins
+        lat_bins = pd.cut(dataset['latitude'], lat_bin_number, labels = np.array(range(lat_bin_number)))
     
-    # Cut lat bins
-    lat_bins = pd.cut(dataset['latitude'], lat_bin_number, labels = np.array(range(lat_bin_number)))
+        # Add bins to dataframe
+        dataset1['lat_bins'] = lat_bins
     
-    # Add bins to dataframe
-    dataset1['lat_bins'] = lat_bins
+        # Cut height bins
+        height_bins = pd.cut(dataset['photon_height'], height_bin_number, labels = np.round(np.linspace(dataset['photon_height'].min(), dataset['photon_height'].max(), num=height_bin_number), decimals = 1))
     
-    # Cut height bins
-    height_bins = pd.cut(dataset['photon_height'], height_bin_number, labels = np.round(np.linspace(dataset['photon_height'].min(), dataset['photon_height'].max(), num=height_bin_number), decimals = 1))
-    
-    # Add height bins to dataframe
-    dataset1['height_bins'] = height_bins
-    dataset1 = dataset1.reset_index(drop=True)
-
+        # Add height bins to dataframe
+        dataset1['height_bins'] = height_bins
+        dataset1 = dataset1.reset_index(drop=True)
+#Another option could be to print an error statement or raise an exception. 
     return dataset1
 
 def get_sea_height(binned_data, surface_buffer):
